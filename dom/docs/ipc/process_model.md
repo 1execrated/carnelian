@@ -115,7 +115,7 @@ The "Renderer" alternative name is used by Chromium for its equivalent to conten
 ```{eval-rst}
 
 :remoteType: ``prealloc``
-:default count: 3 (``dom.ipc.processPrelaunch.fission.number``, or 1 if Fission is disabled)
+:default count: 0 (``dom.ipc.processPrelaunch.fission.number``, or 1 if Fission is disabled)
 ```
 
 To avoid the need to launch new content processes to host new content when navigating, new content processes are pre-launched and specialized when they are requested. These preallocated content processes will never load content, and must be specialized before they can be used.

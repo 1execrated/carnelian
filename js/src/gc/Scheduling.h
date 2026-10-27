@@ -361,7 +361,7 @@
    * scheduled for a GC, depending on the exact circumstances.                 \
    */                                                                          \
   _(JSGC_ALLOCATION_THRESHOLD, size_t, gcZoneAllocThresholdBase, ConvertMB,    \
-    NoCheck, 27 * 1024 * 1024)                                                 \
+    NoCheck, 20 * 1024 * 1024)                                                 \
                                                                                \
   /*                                                                           \
    * JSGC_SMALL_HEAP_SIZE_MAX                                                  \
@@ -407,7 +407,7 @@
    * "HeapGrowthFactor".                                                       \
    */                                                                          \
   _(JSGC_LOW_FREQUENCY_HEAP_GROWTH, double, lowFrequencyHeapGrowth,            \
-    ConvertTimes100, CheckHeapGrowth, 1.5)                                     \
+    ConvertTimes100, CheckHeapGrowth, 1.25)                                    \
                                                                                \
   /*                                                                           \
    * JSGC_HIGH_FREQUENCY_SMALL_HEAP_GROWTH                                     \
@@ -428,7 +428,7 @@
    * memory.                                                                   \
    */                                                                          \
   _(JSGC_MALLOC_THRESHOLD_BASE, size_t, mallocThresholdBase, ConvertMB,        \
-    NoCheck, 38 * 1024 * 1024)                                                 \
+    NoCheck, 30 * 1024 * 1024)                                                 \
                                                                                \
   /*                                                                           \
    * Number of bytes to allocate between incremental slices in GCs triggered   \

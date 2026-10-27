@@ -3764,7 +3764,7 @@
   # Bug 1999950: Prelaunch 1 process on Android due to a performance regression.
   value: 1
 #else
-  value: 3
+  value: 0
 #endif
   mirror: always
 

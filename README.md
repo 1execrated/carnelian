@@ -1,18 +1,21 @@
-![Firefox Browser](./docs/readme/readme-banner.svg)
+# carnelian
 
-[Firefox](https://firefox.com/) is a fast, reliable and private web browser from the non-profit [Mozilla organization](https://mozilla.org/).
+firefox fork for windows, low ram without cutting features, and quick
 
-### Contributing
+## numbers
 
-To learn how to contribute to Firefox read the [Firefox Contributors' Quick Reference document](https://firefox-source-docs.mozilla.org/contributing/contribution_quickref.html).
+private bytes, whole process tree, median of three runs, same profile and pages each time
 
-We use [bugzilla.mozilla.org](https://bugzilla.mozilla.org/) as our issue tracker, please file bugs there.
+| workload | before | after | delta |
+|---|---|---|---|
+| blank window | 594.8 mb | 506.2 mb | -88.6 mb |
+| three tabs | 698.9 mb | 612.5 mb | -86.4 mb |
+| js heavy page | 716.1 mb | 576.5 mb | -139.6 mb |
 
-### Resources
+## build
 
-* [Firefox Source Docs](https://firefox-source-docs.mozilla.org/) is our primary documentation repository
-* Nightly development builds can be downloaded from [Firefox Nightly page](https://www.mozilla.org/firefox/channel/desktop/#nightly)
+mozconfig, then mach build
 
-If you have a question about developing Firefox, and can't find the solution
-on [Firefox Source Docs](https://firefox-source-docs.mozilla.org/), you can try asking your question on Matrix at
-chat.mozilla.org in the [Introduction channel](https://chat.mozilla.org/#/room/#introduction:mozilla.org).
+## releases
+
+source tarballs with a sha256 alongside, tools/make_source_archive.sh so the same tag rebuilds to the same bytes

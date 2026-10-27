@@ -16,7 +16,10 @@ def FirefoxBranding():
 
     if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
         FINAL_TARGET_FILES[".."] += [
-            "firefox.VisualElementsManifest.xml",
+            (
+                "firefox.VisualElementsManifest.xml",
+                CONFIG["MOZ_APP_NAME"] + ".VisualElementsManifest.xml",
+            ),
             "private_browsing.VisualElementsManifest.xml",
         ]
         FINAL_TARGET_FILES.VisualElements += [

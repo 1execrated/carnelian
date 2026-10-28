@@ -2969,12 +2969,6 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
   gpm->AddListener(this);
 
-  if (StaticPrefs::media_rdd_process_enabled()) {
-    // Ensure the RDD process has been started.
-    RDDProcessManager* rdd = RDDProcessManager::Get();
-    rdd->LaunchRDDProcess();
-  }
-
   nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
   if (sheetService) {
     // This looks like a lot of work, but in a normal browser session we just

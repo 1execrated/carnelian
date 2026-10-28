@@ -7481,12 +7481,12 @@
 
 - name: gfx.canvas.accelerated.cache-size
   type: RelaxedAtomicUint32
-  value: 256
+  value: 64
   mirror: always
 
 - name: gfx.canvas.accelerated.reserve-empty-cache
   type: RelaxedAtomicUint32
-  value: 36
+  value: 0
   mirror: always
 
 - name: gfx.canvas.accelerated.max-draw-target-count
@@ -8972,7 +8972,7 @@
 # we try to avoid it.
 - name: gfx.webrender.max-shared-surface-size
   type: int32_t
-  value: 2048
+  value: 1024
   mirror: once
 
 # Whether to use EGL robustness or not.
@@ -9388,7 +9388,7 @@
 # Maximum size for the surface cache, in kilobytes.
 - name: image.mem.surfacecache.max_size_kb
   type: uint32_t
-  value: 2024 * 1024
+  value: 128 * 1024
   mirror: once
 
 # Minimum timeout for expiring unused images from the surface cache, in

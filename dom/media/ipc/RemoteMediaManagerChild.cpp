@@ -320,11 +320,6 @@ media::DecodeSupportSet RemoteMediaManagerChild::Supports(
         aLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM) {
       LaunchUtilityProcessIfNeeded(aLocation);
     }
-    if (aLocation == RemoteMediaIn::RddProcess) {
-      // Ensure the RDD process got started.
-      // TODO: This can be removed once bug 1684991 is fixed.
-      LaunchRDDProcessIfNeeded();
-    }
 
     // Assume the format is supported to prevent false negative, if the remote
     // process supports that specific track type. HW support is unknown until
@@ -635,11 +630,6 @@ EncodeSupportSet RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
         aLocation == RemoteMediaIn::UtilityProcess_WMF ||
         aLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM) {
       LaunchUtilityProcessIfNeeded(aLocation);
-    }
-    if (aLocation == RemoteMediaIn::RddProcess) {
-      // Ensure the RDD process got started.
-      // TODO: This can be removed once bug 1684991 is fixed.
-      LaunchRDDProcessIfNeeded();
     }
 
     // Assume the format is supported to prevent false negative, if the remote

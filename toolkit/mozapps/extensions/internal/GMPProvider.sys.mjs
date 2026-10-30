@@ -396,6 +396,15 @@ GMPWrapper.prototype = {
         return Promise.resolve(false);
       }
 
+      if (this._plugin.isEME && !this.isInstalled) {
+        this._log.trace(
+          "findUpdates() - " +
+            this._plugin.id +
+            " - EME plugin not installed, deferring"
+        );
+        return Promise.resolve(false);
+      }
+
       let secSinceLastCheck =
         Date.now() / 1000 -
         Services.prefs.getIntPref(GMPPrefs.KEY_UPDATE_LAST_CHECK, 0);

@@ -561,7 +561,7 @@ GMPInstallManager.prototype = {
    * @return a promise which will be resolved if all addons could be installed
    *         successfully, rejected otherwise.
    */
-  async simpleCheckAndInstall() {
+  async simpleCheckAndInstall({ installEME = true } = {}) {
     let log = getScopedLogger("GMPInstallManager.simpleCheckAndInstall");
 
     if (this._versionchangeOccurred()) {
@@ -607,6 +607,13 @@ GMPInstallManager.prototype = {
 
         if (gmpAddon.isInstalled) {
           log.info("Addon |" + gmpAddon.id + "| already installed.");
+          return false;
+        }
+
+        if (!installEME && gmpAddon.isEME) {
+          log.info(
+            "Addon |" + gmpAddon.id + "| is EME, deferring until requested."
+          );
           return false;
         }
 

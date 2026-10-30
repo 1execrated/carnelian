@@ -1222,7 +1222,9 @@ BrowserGlue.prototype = {
         this._gmpInstallManager = new GMPInstallManager();
         // We don't really care about the results, if someone is interested they
         // can check the log.
-        this._gmpInstallManager.simpleCheckAndInstall().catch(() => {});
+        this._gmpInstallManager
+          .simpleCheckAndInstall({ installEME: false })
+          .catch(() => {});
       }.bind(this),
 
       function RemoteSettingsInit() {

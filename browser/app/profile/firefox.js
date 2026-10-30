@@ -1162,6 +1162,9 @@ pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 // browser.tabs.remote.separatedMozillaDomains).
 pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", true);
 
+// keep logged in and coop sites in their own process, share one for the rest, saves a gig on heavy pages
+pref("fission.webContentIsolationStrategy", 2);
+
 #ifdef NIGHTLY_BUILD
 pref("browser.tabs.tooltipsShowPidAndActiveness", true);
 #else

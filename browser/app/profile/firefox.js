@@ -1171,6 +1171,9 @@ pref("memory.phc.enabled", false);
 // four shared web processes instead of eight, normal sites already share in here, another 70 to 90 mb off eight and sixteen tabs, page loads still parallel across four workers
 pref("dom.ipc.processCount", 4);
 
+// canvas on the cpu, the accelerated path parks a surface and its buffers per tab inside the gpu process, eight sites drop 75 mb, sixteen drop 92, five heavy sites drop 250, canvas draw time stays at 13 ms
+pref("gfx.canvas.accelerated", false);
+
 #ifdef NIGHTLY_BUILD
 pref("browser.tabs.tooltipsShowPidAndActiveness", true);
 #else

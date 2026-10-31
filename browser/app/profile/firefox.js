@@ -1168,6 +1168,9 @@ pref("fission.webContentIsolationStrategy", 2);
 // phc spends a little ram and cpu on heap checking, off, five heavy sites drop 35 mb
 pref("memory.phc.enabled", false);
 
+// four shared web processes instead of eight, normal sites already share in here, another 70 to 90 mb off eight and sixteen tabs, page loads still parallel across four workers
+pref("dom.ipc.processCount", 4);
+
 #ifdef NIGHTLY_BUILD
 pref("browser.tabs.tooltipsShowPidAndActiveness", true);
 #else

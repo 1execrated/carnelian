@@ -306,6 +306,9 @@ void ScriptPreloader::StartCacheWriteIfReady() {
 }
 
 void ScriptPreloader::StartCacheWrite() {
+  if (!StaticPrefs::javascript_options_script_preloader()) {
+    return;
+  }
   MOZ_DIAGNOSTIC_ASSERT(!mSaveThread);
 
   (void)NS_NewNamedThread("SaveScripts", getter_AddRefs(mSaveThread), this);
@@ -450,10 +453,17 @@ void ScriptPreloader::FinishContentStartup() {
 }
 
 bool ScriptPreloader::WillWriteScripts() {
+  if (!StaticPrefs::javascript_options_script_preloader()) {
+    return false;
+  }
   return !mDataPrepared && (XRE_IsParentProcess() || mChildActor);
 }
 
 bool ScriptPreloader::Active() const {
+  if (!StaticPrefs::javascript_options_script_preloader()) {
+    return false;
+  }
+
   if (!mCacheInitialized) {
     return false;
   }
@@ -522,6 +532,10 @@ Result<Ok, nsresult> ScriptPreloader::InitCache(const nsAString& basePath) {
   RegisterWeakMemoryReporter(this);
 
   if (!XRE_IsParentProcess()) {
+    return Ok();
+  }
+
+  if (!StaticPrefs::javascript_options_script_preloader()) {
     return Ok();
   }
 

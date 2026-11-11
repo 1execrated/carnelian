@@ -89,6 +89,17 @@ bool screenHasInvertedColors()
     return false;
 }
 
+std::optional<FramesPerSecond> screenRefreshRate(Widget* widget)
+{
+    DEVMODE deviceInfo = deviceInfoForWidget(widget);
+
+    // A driver that will not answer reports 0, and some report the meaningless 1.
+    if (deviceInfo.dmDisplayFrequency <= 1)
+        return std::nullopt;
+
+    return deviceInfo.dmDisplayFrequency;
+}
+
 FloatRect screenRect(Widget* widget)
 {
     MONITORINFOEX monitorInfo = monitorInfoForWidget(widget);

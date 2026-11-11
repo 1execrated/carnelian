@@ -26,9 +26,22 @@
 #include "config.h"
 #include "DisplayRefreshMonitorWin.h"
 
+#include <mmsystem.h>
+
 namespace WebCore {
 
-constexpr FramesPerSecond DefaultFramesPerSecond = 60;
+// One process wide bump, never handed back. a browser with a running refresh monitor wants
+// 1 ms waits anyway, and timeEndPeriod racing the next timeBeginPeriod is what silently put
+// the grain back to 15.6 ms.
+static void ensureHighResolutionTimers()
+{
+    static bool raised { false };
+    if (raised)
+        return;
+
+    raised = true;
+    timeBeginPeriod(timerResolutionMs);
+}
 
 RefPtr<DisplayRefreshMonitorWin> DisplayRefreshMonitorWin::create(PlatformDisplayID displayID)
 {
@@ -40,6 +53,27 @@ DisplayRefreshMonitorWin::DisplayRefreshMonitorWin(PlatformDisplayID displayID)
     , m_timer(RunLoop::mainSingleton(), "DisplayRefreshMonitorWin::Timer"_s, this, &DisplayRefreshMonitorWin::displayLinkCallbackFired)
     , m_currentUpdate({ 0, DefaultFramesPerSecond })
 {
+    updateRefreshRate();
+}
+
+void DisplayRefreshMonitorWin::updateRefreshRate()
+{
+    FramesPerSecond rate = screenRefreshRate().value_or(DefaultFramesPerSecond);
+
+    // A driver that reports something absurd is worse than a 60 hz guess.
+    if (rate < 1 || rate > 1000)
+        rate = DefaultFramesPerSecond;
+
+    if (rate == m_framesPerSecond)
+        return;
+
+    m_framesPerSecond = rate;
+    m_currentUpdate = { 0, rate };
+}
+
+std::optional<FramesPerSecond> DisplayRefreshMonitorWin::displayNominalFramesPerSecond()
+{
+    return m_framesPerSecond;
 }
 
 void DisplayRefreshMonitorWin::displayLinkCallbackFired()
@@ -50,8 +84,19 @@ void DisplayRefreshMonitorWin::displayLinkCallbackFired()
 
 bool DisplayRefreshMonitorWin::startNotificationMechanism()
 {
+    // The mode can change while the app runs, a user switching to 100 hz or a laptop
+    // moving between panels, so re-read it every time the mechanism starts.
+    updateRefreshRate();
+
+    // Windows rounds every wait up to its clock tick, 15.6 ms by default, so a 10 ms refresh
+    // timer is delivered at 16 ms and a 100 hz panel is paced at 64 fps. raise the process to
+    // 1 ms once a high refresh display shows up and leave it there. handing it back on every
+    // stop just races the next start, which is what kept the 10 ms timer at 16 ms.
+    if (m_framesPerSecond > 60)
+        ensureHighResolutionTimers();
+
     if (!m_timer.isActive())
-        m_timer.startRepeating(16_ms);
+        m_timer.startRepeating(1000_ms / static_cast<double>(m_framesPerSecond));
 
     return true;
 }

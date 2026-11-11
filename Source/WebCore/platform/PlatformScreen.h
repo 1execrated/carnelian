@@ -28,6 +28,7 @@
 #include <WebCore/ContentsFormat.h>
 #include <WebCore/ScreenProperties.h>
 #include <memory>
+#include <optional>
 #include <wtf/CompletionHandler.h>
 #include <wtf/Forward.h>
 #include <wtf/Platform.h>
@@ -69,6 +70,12 @@ bool screenIsMonochrome(Widget*);
 WEBCORE_EXPORT ColorSpace screenColorSpace(Widget* = nullptr);
 
 bool screenHasInvertedColors();
+
+#if PLATFORM(WIN)
+// dmDisplayFrequency for the monitor, nullopt when the driver will not answer.
+// returns unsigned rather than FramesPerSecond so this header stays free of HostWindow.h.
+std::optional<unsigned> screenRefreshRate(Widget* = nullptr);
+#endif
 
 #if USE(GLIB)
 double fontDPI(); // dpi to use for font scaling

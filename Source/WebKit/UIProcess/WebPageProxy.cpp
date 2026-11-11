@@ -16529,10 +16529,18 @@ WebPageCreationParameters WebPageProxy::creationParameters(WebProcessProxy& proc
     parameters.minimumUnobscuredSize = internals().minimumUnobscuredSize;
     parameters.maximumUnobscuredSize = internals().maximumUnobscuredSize;
     parameters.viewExposedRect = internals().viewExposedRect;
+#if PLATFORM(WIN)
+    // The windows port has no display id concept, it never fills m_displayID, so nothing ever told
+    // the page its refresh rate and the scheduler quietly fell back to a 16.67 ms timer. that timer
+    // is then rounded up to the 15.6 ms clock tick, so a 100 hz panel was paced at 64 fps.
+    parameters.displayID = m_displayID.value_or(0);
+    parameters.nominalFramesPerSecond = drawingArea.displayNominalFramesPerSecond();
+#else
     if (m_displayID) {
         parameters.displayID = m_displayID;
         parameters.nominalFramesPerSecond = drawingArea.displayNominalFramesPerSecond();
     }
+#endif
     parameters.alwaysShowsHorizontalScroller = m_alwaysShowsHorizontalScroller;
     parameters.alwaysShowsVerticalScroller = m_alwaysShowsVerticalScroller;
     parameters.suppressScrollbarAnimations = m_suppressScrollbarAnimations;

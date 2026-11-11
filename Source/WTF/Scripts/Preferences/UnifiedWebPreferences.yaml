@@ -5007,6 +5007,7 @@ PreferPageRenderingUpdatesNear60FPSEnabled:
   humanReadableDescription: "Prefer page rendering updates near 60 frames per second rather than using the display's refresh rate"
   defaultValue:
     "PLATFORM(VISION)": false
+    "PLATFORM(WIN)": false
     default: true
 
 PreferSpatialAudioExperience:

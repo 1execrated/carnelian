@@ -56,6 +56,7 @@ private:
     // DrawingAreaProxy
     void deviceScaleFactorDidChange(CompletionHandler<void()>&&) override;
     void sizeDidChange() override;
+    std::optional<WebCore::FramesPerSecond> displayNominalFramesPerSecond() override;
     bool shouldSendWheelEventsToEventDispatcher() const final { return true; }
 
     // message handers

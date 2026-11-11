@@ -35,6 +35,7 @@
 #include "MessageSenderInlines.h"
 #include "UpdateInfo.h"
 #include "WebPageProxy.h"
+#include <WebCore/PlatformScreen.h>
 #include <WebCore/Region.h>
 
 namespace WebKit {
@@ -65,6 +66,13 @@ void DrawingAreaProxyWC::deviceScaleFactorDidChange(CompletionHandler<void()>&& 
 {
     sizeDidChange();
     completionHandler();
+}
+
+// The page needs the panel's real rate or it schedules against a 60 hz assumption, which on a
+// 100 hz display means every frame is up to 10 ms stale against a vblank it cannot see.
+std::optional<WebCore::FramesPerSecond> DrawingAreaProxyWC::displayNominalFramesPerSecond()
+{
+    return WebCore::screenRefreshRate();
 }
 
 void DrawingAreaProxyWC::sizeDidChange()

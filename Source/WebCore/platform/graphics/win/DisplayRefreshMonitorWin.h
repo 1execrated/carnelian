@@ -31,6 +31,12 @@
 
 namespace WebCore {
 
+constexpr FramesPerSecond DefaultFramesPerSecond = 60;
+
+// Windows rounds every wait up to its clock tick, 15.6 ms by default, which would pace a
+// 100 hz panel at 64 fps. ask the scheduler for 1 ms while the monitor is running.
+constexpr UINT timerResolutionMs = 1;
+
 class DisplayRefreshMonitorWin : public DisplayRefreshMonitor, public CanMakeWeakPtr<DisplayRefreshMonitorWin> {
 public:
     static RefPtr<DisplayRefreshMonitorWin> create(PlatformDisplayID);
@@ -40,11 +46,15 @@ private:
 
     bool startNotificationMechanism() final;
     void stopNotificationMechanism() final;
-    
+
+    std::optional<FramesPerSecond> displayNominalFramesPerSecond() final;
+
     void displayLinkCallbackFired();
+    void updateRefreshRate();
 
     RunLoop::Timer m_timer;
     DisplayUpdate m_currentUpdate;
+    FramesPerSecond m_framesPerSecond { DefaultFramesPerSecond };
 };
 
 } // namespace WebCore

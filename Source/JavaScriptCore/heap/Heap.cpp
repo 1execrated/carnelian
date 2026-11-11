@@ -1981,6 +1981,14 @@ void Heap::updateAllocationLimits()
     m_oversizedBytesAllocatedThisCycle = 0;
     m_lastOversizedAllocationThisCycle = 0;
 
+    // the growth heuristics only ever multiply, so on a 32 gb box a heavy page climbs with no
+    // ceiling, jetstream2 reached 1.2 gb. clamp last so neither the opportunistic path nor the
+    // eden path can raise the limit back. never below what is live, or eden would wrap.
+    if (size_t cap = Options::maxHeapSize()) {
+        m_maxHeapSize = std::min(m_maxHeapSize, std::max(cap, currentHeapSize));
+        m_maxEdenSize = m_maxHeapSize - currentHeapSize;
+    }
+
     dataLogIf(Options::logGC(), "=> ", currentHeapSize / 1024, "kb, ");
 }
 

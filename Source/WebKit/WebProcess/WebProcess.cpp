@@ -745,6 +745,12 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters,
 #define WEBKIT_APPLY_JSC_OPTION_FROM_SHARED_PREFERENCE(jscOption, preferenceField) JSC::Options::jscOption() = jscOptions.preferenceField;
         FOR_EACH_JSC_OPTION_SHARED_PREFERENCE(WEBKIT_APPLY_JSC_OPTION_FROM_SHARED_PREFERENCE)
 #undef WEBKIT_APPLY_JSC_OPTION_FROM_SHARED_PREFERENCE
+        // jsc grows the heap by multiplying it, so on a 32 gb box a heavy page climbs without a
+        // ceiling, jetstream2 reached 1.2 gb. the browser has 1 gb for everything, so cap the heap
+        // here. this binds only once a page is genuinely large, so small pages keep the fast
+        // aggressive growth path and pay nothing.
+        if (!JSC::Options::maxHeapSize())
+            JSC::Options::maxHeapSize() = size_t { 512 } * MB;
         JSC::Options::notifyOptionsChanged();
     }
 

@@ -1902,6 +1902,20 @@ void WebProcess::pageActivityStateDidChange(PageIdentifier, OptionSet<WebCore::A
 #if OS(LINUX)
         HighPriorityThreads::singleton().setEnabled(hasVisibleWebPage());
 #endif
+#if PLATFORM(WIN)
+        // a tab that gets switched away from keeps every decoded image it ever painted, and on
+        // windows nothing ever asked it to give them back, the only cleanup was the window close
+        // path. start that same timer here so a backgrounded tab drops its decoded images after a
+        // few seconds, which is what keeps several heavy tabs inside the 1 gb budget.
+        if (hasVisibleWebPage()) {
+            if (m_nonVisibleProcessEarlyMemoryCleanupTimer)
+                m_nonVisibleProcessEarlyMemoryCleanupTimer->stop();
+        } else {
+            if (!m_nonVisibleProcessEarlyMemoryCleanupTimer)
+                m_nonVisibleProcessEarlyMemoryCleanupTimer.emplace(*this, &WebProcess::nonVisibleProcessEarlyMemoryCleanupTimerFired, nonVisibleProcessEarlyMemoryCleanupDelay);
+            m_nonVisibleProcessEarlyMemoryCleanupTimer->restart();
+        }
+#endif
     }
 }
 
@@ -2095,8 +2109,9 @@ bool WebProcess::isProcessBeingCachedForPerformance()
 
 void WebProcess::nonVisibleProcessEarlyMemoryCleanupTimerFired()
 {
-    ASSERT(m_pagesInWindows.isEmpty());
-    if (!m_pagesInWindows.isEmpty())
+    // the window close path and the tab switch path both land here, the condition they share is
+    // that nothing in this process is on screen, not that every page left its window.
+    if (hasVisibleWebPage())
         return;
 
     destroyDecodedDataForAllImages();
@@ -2111,13 +2126,18 @@ void WebProcess::nonVisibleProcessEarlyMemoryCleanupTimerFired()
 
 void WebProcess::destroyDecodedDataForAllImages()
 {
+#if !USE(GRAPHICS_LAYER_WC)
     // Only do this when UI side compositing is enabled, since for now only
     // RemoteLayerTreeDrawingArea will correctly synchronously decode images
     // after their decoded data has been destroyed.
+    // the wc port paints synchronously on the main thread as well, through
+    // GraphicsLayerWC::paintAndFlush or DrawingAreaWC::sendUpdateNonAC, so a destroyed
+    // decoded image is re-decoded inside the same paint that needed it and this is safe.
     for (auto& page : m_pageMap.values()) {
         if (!page->isUsingUISideCompositing())
             return;
     }
+#endif
 
     for (auto& page : m_pageMap.values())
         page->willDestroyDecodedDataForAllImages();

@@ -53,6 +53,12 @@ DisplayRefreshMonitorWin::DisplayRefreshMonitorWin(PlatformDisplayID displayID)
     , m_timer(RunLoop::mainSingleton(), "DisplayRefreshMonitorWin::Timer"_s, this, &DisplayRefreshMonitorWin::displayLinkCallbackFired)
     , m_currentUpdate({ 0, DefaultFramesPerSecond })
 {
+    // DisplayRefreshMonitor defaults this to 0, so the first tick that arrives while no client
+    // has re-armed yet stops the timer, and the client then restarts it from now, which loses
+    // the tick. at 100 hz that showed up as 10,21,10,21 ms and a 64 fps ceiling on a 100 hz
+    // panel. mac uses 20, keep the clock running through a slow frame but still stop when idle.
+    setMaxUnscheduledFireCount(20);
+
     updateRefreshRate();
 }
 

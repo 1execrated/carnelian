@@ -1980,6 +1980,26 @@ void Page::updateScreenSupportedContentsFormats()
 #endif
 }
 
+std::optional<FramesPerSecond> Page::displayNominalFramesPerSecond() const
+{
+#if PLATFORM(WIN)
+    // nothing on windows ever fills the display id or the nominal rate over ipc, so every interval
+    // here was computed from a nullopt and the scheduler fell back to a 16.67 ms timer, which
+    // windows then rounds up to its 15.6 ms clock tick, a 100 hz panel paced at 64 fps. there is
+    // one monitor, ask the platform directly instead of trusting a value that never arrives.
+    // cached, because the query is an EnumDisplaySettings syscall and this is on the per frame path.
+    if (!m_displayNominalFramesPerSecond) {
+        static const std::optional<FramesPerSecond> platformRate = [] {
+            if (auto rate = screenRefreshRate())
+                return std::optional<FramesPerSecond>(*rate);
+            return std::optional<FramesPerSecond> { };
+        }();
+        return platformRate;
+    }
+#endif
+    return m_displayNominalFramesPerSecond;
+}
+
 void Page::windowScreenDidChange(PlatformDisplayID displayID, std::optional<FramesPerSecond> nominalFramesPerSecond)
 {
     bool displayChanged = displayID != m_displayID;
@@ -3043,7 +3063,7 @@ std::optional<FramesPerSecond> Page::preferredRenderingUpdateFramesPerSecond(Opt
     if (!flags.contains(PreferredRenderingUpdateOption::IncludeThrottlingReasons))
         throttlingReasons = { };
 
-    auto frameRate = preferredFramesPerSecond(throttlingReasons, m_displayNominalFramesPerSecond, settings().preferPageRenderingUpdatesNear60FPSEnabled());
+    auto frameRate = preferredFramesPerSecond(throttlingReasons, displayNominalFramesPerSecond(), settings().preferPageRenderingUpdatesNear60FPSEnabled());
     if (!flags.contains(PreferredRenderingUpdateOption::IncludeAnimationsFrameRate))
         return frameRate;
 
@@ -3074,7 +3094,7 @@ std::optional<FramesPerSecond> Page::preferredRenderingUpdateFramesPerSecond(Opt
 
 Seconds Page::preferredRenderingUpdateInterval() const
 {
-    return preferredFrameInterval(m_throttlingReasons, m_displayNominalFramesPerSecond, settings().preferPageRenderingUpdatesNear60FPSEnabled());
+    return preferredFrameInterval(m_throttlingReasons, displayNominalFramesPerSecond(), settings().preferPageRenderingUpdatesNear60FPSEnabled());
 }
 
 void Page::addGPUCanvasRequestingRenderingUpdatePacing(CanvasRenderingContext& context)

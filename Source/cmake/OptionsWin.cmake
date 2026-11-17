@@ -47,6 +47,11 @@ find_package(ICU 70.1 REQUIRED COMPONENTS data i18n uc)
 find_package(JPEG 1.5.2 REQUIRED)
 find_package(LibXml2 2.9.7 REQUIRED)
 find_package(OpenSSL REQUIRED)
+
+# the gstreamer sdk's pc files leak the sdk include root into compile flags later, and that root
+# carries bundled openssl, zlib and png headers. put the vcpkg include in front so the libraries
+# webkit actually links always win the header search.
+add_compile_options(-I${OPENSSL_INCLUDE_DIR})
 find_package(PNG 1.6.34 REQUIRED)
 find_package(SQLite3 3.23.1 REQUIRED)
 find_package(ZLIB 1.2.11 REQUIRED)
@@ -58,6 +63,15 @@ if (NOT TARGET SQLite3::SQLite3) # CMake < 4.3
 endif ()
 
 WEBKIT_OPTION_BEGIN()
+
+include(GStreamerDefinitions)
+
+# the sdk's gstgl is wgl only and angle is egl, so the gl video sink cannot work on this port yet
+WEBKIT_OPTION_DEFAULT_PORT_VALUE(USE_GSTREAMER_GL PRIVATE OFF)
+
+# gstreamer's shared dependency list refers to these two speech engines, no win backend exists
+WEBKIT_OPTION_DEFINE(USE_FLITE "Whether to enable Flite speech synthesis" PRIVATE OFF)
+WEBKIT_OPTION_DEFINE(USE_SPIEL "Whether to enable Spiel speech synthesis" PRIVATE OFF)
 
 WEBKIT_OPTION_DEFINE(USE_SKIA_OPENTYPE_SVG "Whether to use the Skia built-in support for OpenType SVG fonts." PUBLIC ON)
 WEBKIT_OPTION_DEPEND(USE_SKIA_OPENTYPE_SVG USE_SKIA)
@@ -117,7 +131,38 @@ WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_WEBDRIVER PRIVATE ON)
 SET_AND_EXPOSE_TO_BUILD(ENABLE_WEBDRIVER_KEYBOARD_INTERACTIONS ON)
 SET_AND_EXPOSE_TO_BUILD(ENABLE_WEBDRIVER_MOUSE_INTERACTIONS ON)
 
+include(GStreamerDependencies)
+
 WEBKIT_OPTION_END()
+
+if (USE_GSTREAMER)
+    find_package(GLib 2.70.0 REQUIRED COMPONENTS Thread Module Gio)
+
+    # the sdk's pc files put the sdk include root on their cflags, and that root carries bundled
+    # copies of openssl, zlib, png and friends that would shadow the vcpkg libraries webkit
+    # already links. drop the bare root, keep the glib include dirs.
+    foreach (_glib_target GLib::GLib GLib::Object GLib::Thread GLib::Module GLib::Gio)
+        if (TARGET ${_glib_target})
+            get_target_property(_glib_include_dirs ${_glib_target} INTERFACE_INCLUDE_DIRECTORIES)
+            if (_glib_include_dirs)
+                list(FILTER _glib_include_dirs EXCLUDE REGEX "msvc_x86_64/include$")
+                set_target_properties(${_glib_target} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${_glib_include_dirs}")
+            endif ()
+
+            # findglib also pushes the raw cflags onto the interface, and those carry the include
+            # dirs as -I compile options, which is where the sdk root sneaks back in. the include
+            # dirs are already set above, the flags carry nothing needed on windows.
+            set_target_properties(${_glib_target} PROPERTIES INTERFACE_COMPILE_OPTIONS "")
+        endif ()
+    endforeach ()
+
+    # the shared gstreamer cmake links GLib::GioUnix, which does not exist here because the sdk
+    # ships gio-2.0 and gio-windows-2.0 but no gio-unix-2.0, point the target at plain gio
+    if (NOT TARGET GLib::GioUnix)
+        add_library(GLib::GioUnix INTERFACE IMPORTED)
+        set_target_properties(GLib::GioUnix PROPERTIES INTERFACE_LINK_LIBRARIES GLib::Gio)
+    endif ()
+endif ()
 
 set(USE_ANGLE_EGL ON)
 
@@ -129,7 +174,11 @@ SET_AND_EXPOSE_TO_BUILD(USE_HARFBUZZ ON)
 SET_AND_EXPOSE_TO_BUILD(USE_OPENSSL ON)
 SET_AND_EXPOSE_TO_BUILD(USE_TEXTURE_MAPPER ON)
 SET_AND_EXPOSE_TO_BUILD(USE_THEME_ADWAITA ON)
-SET_AND_EXPOSE_TO_BUILD(USE_MEDIA_FOUNDATION ${ENABLE_VIDEO})
+if (USE_GSTREAMER)
+    SET_AND_EXPOSE_TO_BUILD(USE_MEDIA_FOUNDATION OFF)
+else ()
+    SET_AND_EXPOSE_TO_BUILD(USE_MEDIA_FOUNDATION ${ENABLE_VIDEO})
+endif ()
 SET_AND_EXPOSE_TO_BUILD(USE_INSPECTOR_SOCKET_SERVER ${ENABLE_REMOTE_INSPECTOR})
 SET_AND_EXPOSE_TO_BUILD(HAVE_GL_FENCE ON)
 SET_AND_EXPOSE_TO_BUILD(ENABLE_DEVELOPER_MODE ${DEVELOPER_MODE})
@@ -190,3 +239,25 @@ set(JavaScriptCore_LIBRARY_TYPE SHARED)
 set(PAL_LIBRARY_TYPE OBJECT)
 set(WebCore_LIBRARY_TYPE OBJECT)
 set(WebCoreTestSupport_LIBRARY_TYPE OBJECT)
+
+include(GStreamerChecks)
+
+# the gstreamer pc files pull the sdk include root in through their requires, and that root
+# carries bundled openssl, zlib and png headers that would shadow the vcpkg libraries webkit
+# already links against. strip the bare root from every component include list.
+foreach (_gst_include_var
+    GSTREAMER_INCLUDE_DIRS
+    GSTREAMER_BASE_INCLUDE_DIRS
+    GSTREAMER_ALLOCATORS_INCLUDE_DIRS
+    GSTREAMER_APP_INCLUDE_DIRS
+    GSTREAMER_AUDIO_INCLUDE_DIRS
+    GSTREAMER_FFT_INCLUDE_DIRS
+    GSTREAMER_GL_INCLUDE_DIRS
+    GSTREAMER_MPEGTS_INCLUDE_DIRS
+    GSTREAMER_PBUTILS_INCLUDE_DIRS
+    GSTREAMER_TAG_INCLUDE_DIRS
+    GSTREAMER_VIDEO_INCLUDE_DIRS)
+    if (DEFINED ${_gst_include_var})
+        list(FILTER ${_gst_include_var} EXCLUDE REGEX "msvc_x86_64/include$")
+    endif ()
+endforeach ()

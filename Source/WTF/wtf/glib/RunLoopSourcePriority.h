@@ -19,7 +19,7 @@
 
 #pragma once
 
-#if USE(GLIB)
+#if USE(GLIB) || USE(GSTREAMER)
 
 namespace WTF {
 
@@ -83,4 +83,4 @@ enum RunLoopSourcePriority {
 
 using WTF::RunLoopSourcePriority;
 
-#endif // USE(GLIB)
+#endif // USE(GLIB) || USE(GSTREAMER)

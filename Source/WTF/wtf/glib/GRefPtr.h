@@ -23,9 +23,10 @@
 
 #pragma once
 
-#if USE(GLIB)
+#if USE(GLIB) || USE(GSTREAMER)
 
 #include <algorithm>
+#include <gio/gio.h>
 #include <glib-object.h>
 #include <wtf/HashTraits.h>
 
@@ -382,4 +383,4 @@ WTF_DEFINE_GREF_TRAITS_INLINE(GVariant, g_variant_ref_sink, g_variant_unref, g_v
 using WTF::GRefPtr;
 using WTF::adoptGRef;
 
-#endif // USE(GLIB)
+#endif // USE(GLIB) || USE(GSTREAMER)

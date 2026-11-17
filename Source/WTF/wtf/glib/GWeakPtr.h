@@ -20,7 +20,7 @@
 
 #pragma once
 
-#if USE(GLIB)
+#if USE(GLIB) || USE(GSTREAMER)
 
 #include <glib-object.h>
 #include <wtf/Noncopyable.h>
@@ -114,4 +114,4 @@ private:
 
 using WTF::GWeakPtr;
 
-#endif // USE(GLIB)
+#endif // USE(GLIB) || USE(GSTREAMER)

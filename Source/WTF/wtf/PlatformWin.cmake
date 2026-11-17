@@ -42,3 +42,28 @@ list(APPEND WTF_LIBRARIES
     synchronization
     winmm
 )
+
+if (USE_GSTREAMER)
+    list(APPEND WTF_SOURCES
+        glib/GMallocString.cpp
+        glib/GSpanExtras.cpp
+    )
+
+    # a gtk hack normally exports these for the webcore gstreamer headers, the win port has none
+    list(APPEND WTF_PUBLIC_HEADERS
+        glib/GLibExtras.h
+        glib/GMallocString.h
+        glib/GRefPtr.h
+        glib/GSpanExtras.h
+        glib/GThreadSafeWeakPtr.h
+        glib/GTypedefs.h
+        glib/GUniquePtr.h
+        glib/GWeakPtr.h
+        glib/RunLoopSourcePriority.h
+        glib/WTFGType.h
+    )
+
+    list(APPEND WTF_LIBRARIES
+        GLib::Gio
+    )
+endif ()

@@ -76,7 +76,9 @@
 #endif
 
 #if USE(GSTREAMER)
+#if USE(COORDINATED_GRAPHICS)
 #include "CoordinatedPlatformLayerBufferProxy.h"
+#endif
 #include "MediaPlayerPrivateGStreamer.h"
 #if ENABLE(MEDIA_SOURCE)
 #include "MediaPlayerPrivateGStreamerMSE.h"

@@ -4200,15 +4200,19 @@ void MediaPlayerPrivateGStreamer::triggerRepaint(GRefPtr<GstSample>&& sample)
     }
 
     bool shouldTriggerResize;
+#if USE(COORDINATED_GRAPHICS)
     IsDuplicateSample isDuplicateSample = IsDuplicateSample::No;
+#endif
     {
         Locker sampleLocker { m_sampleMutex };
         shouldTriggerResize = !m_sample;
+#if USE(COORDINATED_GRAPHICS)
         if (!shouldTriggerResize) {
             auto previousBuffer = gst_sample_get_buffer(m_sample.get());
             // We're omitting a !previousBuffer assert here because on some embedded platforms the buffer can't be deep copied by flushCurrentBuffer().
             isDuplicateSample = buffer == previousBuffer ? IsDuplicateSample::Yes : IsDuplicateSample::No;
         }
+#endif
         // m_videoInfo must describe the video information about m_sample, so update both in tandem.
         auto* caps = gst_sample_get_caps(sample.get());
         if (caps && (!m_videoInfo || !m_sample || caps != gst_sample_get_caps(m_sample.get())))

@@ -20,7 +20,7 @@
 
 #pragma once
 
-#if USE(GLIB)
+#if USE(GLIB) || USE(GSTREAMER)
 
 #include "GRefPtr.h"
 
@@ -80,4 +80,4 @@ private:
 
 using WTF::GThreadSafeWeakPtr;
 
-#endif // USE(GLIB)
+#endif // USE(GLIB) || USE(GSTREAMER)

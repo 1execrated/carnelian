@@ -193,7 +193,9 @@ void GStreamerVideoFrameConverter::scheduleReleaseUnusedPipelinesTimer()
     RunLoop::mainSingleton().dispatch([this] {
         if (!m_releaseUnusedPipelinesTimer) {
             m_releaseUnusedPipelinesTimer = makeUnique<RunLoop::Timer>(RunLoop::mainSingleton(), "GStreamerVideoFrameConverter::ReleaseUnusedPipelinesTimer"_s, this, &GStreamerVideoFrameConverter::releaseUnusedPipelinesTimerFired);
+#if USE(GLIB_EVENT_LOOP)
             m_releaseUnusedPipelinesTimer->setPriority(RunLoopSourcePriority::ReleaseUnusedResourcesTimer);
+#endif
         }
         m_releaseUnusedPipelinesTimer->startRepeating(s_releaseUnusedPipelinesTimerInterval);
     });

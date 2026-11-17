@@ -41,6 +41,21 @@ list(APPEND TestWebCore_LIBRARIES
 
 target_compile_definitions(TestWebCore PRIVATE ${wrapper_DEFINITIONS})
 
+if (USE_GSTREAMER)
+    # the webcore private headers now pull the gstreamer and glib headers, the tests include them
+    list(APPEND TestWebCore_SYSTEM_INCLUDE_DIRECTORIES
+        ${GSTREAMER_INCLUDE_DIRS}
+        ${GSTREAMER_AUDIO_INCLUDE_DIRS}
+        ${GSTREAMER_PBUTILS_INCLUDE_DIRS}
+        ${GSTREAMER_VIDEO_INCLUDE_DIRS}
+        ${GLib_INCLUDE_DIRS}
+    )
+
+    list(APPEND TestWebCore_LIBRARIES
+        GLib::Gio
+    )
+endif ()
+
 # TestWebKitLegacy
 if (ENABLE_WEBKIT_LEGACY)
     list(APPEND TestWebKitLegacy_SOURCES

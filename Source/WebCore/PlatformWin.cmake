@@ -16,6 +16,15 @@ if (USE_DAWN)
     include(platform/Dawn.cmake)
 endif ()
 
+if (USE_GSTREAMER)
+    include(platform/GStreamer.cmake)
+
+    list(APPEND WebCore_PRIVATE_INCLUDE_DIRECTORIES
+        "${WEBCORE_DIR}/platform/audio/gstreamer"
+        "${WEBCORE_DIR}/platform/mediastream/gstreamer"
+    )
+endif ()
+
 list(APPEND WebCore_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBCORE_DIR}/accessibility/win"
     "${WEBCORE_DIR}/page/win"
@@ -152,6 +161,7 @@ list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
 
 list(APPEND WebCore_LIBRARIES
     crypt32
+    dwrite
     iphlpapi
     ole32
     usp10

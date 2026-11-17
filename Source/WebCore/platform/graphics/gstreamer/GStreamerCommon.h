@@ -617,4 +617,36 @@ void gst_pad_probe_info_set_event(GstPadProbeInfo*, GstEvent*);
 #define gst_state_change_return_get_name gst_element_state_change_return_get_name
 #endif
 
+#if PLATFORM(WIN)
+// windows has no fnmatch, the element and codec filtering in here only use '*' and '?'
+inline bool wtfGStreamerGlobMatches(const char* pattern, const char* string)
+{
+    if (!*pattern)
+        return !*string;
+
+    if (*pattern == '*') {
+        while (*pattern == '*')
+            ++pattern;
+        if (!*pattern)
+            return true;
+        for (const char* next = string; ; ++next) {
+            if (wtfGStreamerGlobMatches(pattern, next))
+                return true;
+            if (!*next)
+                return false;
+        }
+    }
+
+    if (*string && (*pattern == '?' || *pattern == *string))
+        return wtfGStreamerGlobMatches(pattern + 1, string + 1);
+
+    return false;
+}
+
+inline int fnmatch(const char* pattern, const char* string, int)
+{
+    return wtfGStreamerGlobMatches(pattern, string) ? 0 : 1;
+}
+#endif
+
 #endif // USE(GSTREAMER)

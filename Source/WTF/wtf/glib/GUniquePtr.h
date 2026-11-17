@@ -20,7 +20,7 @@
 
 #pragma once
 
-#if USE(GLIB)
+#if USE(GLIB) || USE(GSTREAMER)
 
 #include <gio/gio.h>
 #include <utility>
@@ -141,4 +141,4 @@ using WTF::GUniquePtr;
 using WTF::GUniqueOutPtr;
 using WTF::GFreeDeleter;
 
-#endif // USE(GLIB)
+#endif // USE(GLIB) || USE(GSTREAMER)

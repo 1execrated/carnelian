@@ -26,7 +26,12 @@
 #include "config.h"
 #include <wtf/RunLoop.h>
 
+#include <algorithm>
 #include <wtf/WindowsExtras.h>
+
+#if USE(GSTREAMER)
+#include <glib.h>
+#endif
 
 namespace WTF {
 
@@ -34,6 +39,43 @@ static const UINT PerformWorkMessage = WM_USER + 1;
 static const UINT SetTimerMessage = WM_USER + 2;
 static const UINT FireTimerMessage = WM_USER + 3;
 static const LPCWSTR kRunLoopMessageWindowClassName = L"RunLoopMessageWindow";
+
+#if USE(GSTREAMER)
+static GMainContext* glibContextForCurrentRunLoop()
+{
+    // nothing sets a thread default on the main thread, so a gstreamer bus watch lands on the
+    // global default context as a fallback and this is the loop that has to pump it
+    if (RunLoop::isMain())
+        return g_main_context_default();
+
+    return g_main_context_get_thread_default();
+}
+
+static void drainGLibContext(GMainContext* context)
+{
+    if (!context)
+        return;
+
+    while (g_main_context_pending(context))
+        g_main_context_iteration(context, FALSE);
+}
+
+static DWORD glibWaitTimeout(GMainContext* context, DWORD webkitTimeout)
+{
+    if (!context)
+        return webkitTimeout;
+
+    gint maxPriority = G_PRIORITY_DEFAULT;
+    g_main_context_prepare(context, &maxPriority);
+    gint glibTimeout = -1;
+    gint fdCount = g_main_context_query(context, maxPriority, &glibTimeout, nullptr, 0);
+
+    // stage 0 sources are bus and clock timeouts, if one ever grows an fd before the wait polls
+    // handles, never sleep past a short poll
+    DWORD timeout = glibTimeout < 0 || fdCount > 0 ? 10 : static_cast<DWORD>(glibTimeout);
+    return std::min(webkitTimeout, timeout);
+}
+#endif
 
 LRESULT CALLBACK RunLoop::RunLoopWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -79,6 +121,10 @@ void RunLoop::run()
     auto& runLoop = RunLoop::currentSingleton();
     while (true) {
         runLoop.fireTimers();
+#if USE(GSTREAMER)
+        auto* glibContext = glibContextForCurrentRunLoop();
+        drainGLibContext(glibContext);
+#endif
         MSG message;
         while (BOOL result = ::PeekMessage(&message, nullptr, 0, 0, PM_REMOVE)) {
             if (result == -1)
@@ -89,6 +135,9 @@ void RunLoop::run()
         }
 
         DWORD timeout = runLoop.msTillNextTimer();
+#if USE(GSTREAMER)
+        timeout = glibWaitTimeout(glibContext, timeout);
+#endif
         if (timeout > 0)
             ::MsgWaitForMultipleObjectsEx(0, nullptr, timeout, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
     }
@@ -216,6 +265,9 @@ RunLoop::CycleResult RunLoop::cycle(RunLoopMode)
 {
     auto& runLoop = RunLoop::currentSingleton();
     runLoop.fireTimers();
+#if USE(GSTREAMER)
+    drainGLibContext(glibContextForCurrentRunLoop());
+#endif
     MSG message;
     while (::PeekMessage(&message, nullptr, 0, 0, PM_REMOVE)) {
         if (message.message == WM_QUIT)

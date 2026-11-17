@@ -23,7 +23,9 @@
 
 #if USE(GSTREAMER)
 
+#if USE(GLIB)
 #include "ApplicationGLib.h"
+#endif
 #include "FloatSize.h"
 #include "GLVideoSinkGStreamer.h"
 #include "GStreamerAudioMixer.h"
@@ -38,7 +40,7 @@
 #include "SharedBuffer.h"
 #include "VideoSinkGStreamer.h"
 #include "WebKitAudioSinkGStreamer.h"
-#include <fnmatch.h>
+
 #include <mutex>
 #include <wtf/FileSystem.h>
 #include <wtf/HashMap.h>
@@ -489,7 +491,11 @@ bool ensureGStreamerInitialized()
         int argc = parameters.size() + 1;
         char** argv = g_new0(char*, argc + 1);
         auto argvSpan = unsafeMakeSpan(argv, argc);
+#if PLATFORM(WIN)
+        argvSpan[0] = g_strdup(g_get_prgname() ? g_get_prgname() : "WebKitWebProcess");
+#else
         argvSpan[0] = gStrdup(FileSystem::currentExecutableName());
+#endif
         for (auto [arg, parameter] : zippedRange(argvSpan.subspan(1), parameters))
             arg = gStrdup(parameter.utf8());
 
@@ -1243,10 +1249,12 @@ IGNORE_WARNINGS_BEGIN("cast-align")
             GST_DEBUG("Set media.role as %s on %" GST_PTR_FORMAT, role->utf8(), GST_ELEMENT_CAST(object));
 IGNORE_WARNINGS_END
         }
+#if USE(GLIB)
         if (g_object_class_find_property(objectClass, "client-name")) {
             auto& clientName = getApplicationName();
             g_object_set(object, "client-name", clientName.ascii().data(), nullptr);
         }
+#endif
     }), role.isolatedCopy().releaseImpl().leakRef(), static_cast<GClosureNotify>([](gpointer userData, GClosure*) {
         if (auto* roleImpl = reinterpret_cast<StringImpl*>(userData))
             roleImpl->deref();
@@ -2372,7 +2380,7 @@ void gst_pad_probe_info_set_buffer(GstPadProbeInfo* info, GstBuffer* buffer)
 {
     g_return_if_fail(info->type & GST_PAD_PROBE_TYPE_BUFFER);
 
-    gst_clear_mini_object(&info->data);
+    gst_clear_mini_object(reinterpret_cast<GstMiniObject**>(&info->data));
     info->data = buffer;
 }
 
@@ -2380,7 +2388,7 @@ void gst_pad_probe_info_set_event(GstPadProbeInfo* info, GstEvent* event)
 {
     g_return_if_fail(info->type & (GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM | GST_PAD_PROBE_TYPE_EVENT_UPSTREAM));
 
-    gst_clear_mini_object(&info->data);
+    gst_clear_mini_object(reinterpret_cast<GstMiniObject**>(&info->data));
     info->data = event;
 }
 #endif

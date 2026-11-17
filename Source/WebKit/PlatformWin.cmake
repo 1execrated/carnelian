@@ -8,8 +8,6 @@ include(Platform/Curl.cmake)
 include(Platform/WC.cmake)
 
 list(APPEND WebKit_SOURCES
-    GPUProcess/media/win/RemoteMediaPlayerProxyWin.cpp
-
     GPUProcess/win/GPUProcessMainWin.cpp
     GPUProcess/win/GPUProcessWin.cpp
 
@@ -60,8 +58,6 @@ list(APPEND WebKit_SOURCES
     UIProcess/win/WebProcessPoolWin.cpp
     UIProcess/win/WebView.cpp
 
-    WebProcess/GPU/media/win/VideoLayerRemoteWin.cpp
-
     WebProcess/InjectedBundle/win/InjectedBundleWin.cpp
 
     WebProcess/Inspector/win/RemoteWebInspectorUIWin.cpp
@@ -80,6 +76,34 @@ list(APPEND WebKit_SOURCES
 
     win/WebKitDLL.cpp
 )
+
+if (USE_GSTREAMER)
+    list(APPEND WebKit_SOURCES
+        GPUProcess/media/gstreamer/RemoteMediaPlayerProxyGStreamer.cpp
+        WebProcess/GPU/media/gstreamer/VideoLayerRemoteGStreamer.cpp
+    )
+
+    list(APPEND WebKit_SYSTEM_INCLUDE_DIRECTORIES
+        ${GSTREAMER_INCLUDE_DIRS}
+        ${GSTREAMER_BASE_INCLUDE_DIRS}
+        ${GSTREAMER_APP_INCLUDE_DIRS}
+        ${GSTREAMER_PBUTILS_INCLUDE_DIRS}
+    )
+
+    list(APPEND WebKit_LIBRARIES
+        GLib::Gio
+        ${GSTREAMER_ALLOCATORS_LIBRARIES}
+        ${GSTREAMER_APP_LIBRARIES}
+        ${GSTREAMER_BASE_LIBRARIES}
+        ${GSTREAMER_LIBRARIES}
+        ${GSTREAMER_PBUTILS_LIBRARIES}
+    )
+else ()
+    list(APPEND WebKit_SOURCES
+        GPUProcess/media/win/RemoteMediaPlayerProxyWin.cpp
+        WebProcess/GPU/media/win/VideoLayerRemoteWin.cpp
+    )
+endif ()
 
 list(APPEND WebKit_SERIALIZATION_IN_FILES
     Shared/win/WTFArgumentCodersWin.serialization.in

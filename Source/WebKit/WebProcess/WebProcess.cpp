@@ -572,11 +572,13 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters,
 #if PLATFORM(WIN)
             // windows never reports a decoded size for an image, so the shared cache pruning has
             // nothing to look at and a visible page keeps every thumbnail it ever decoded, memmap
-            // shows 157 mb of it on the youtube homepage. a settled page is 280 mb without them,
-            // so drop the frames once the footprint is over 300 and a repaint decodes only what
-            // is actually on screen again.
-            if (critical == Critical::No && WTF::memoryFootprint() > 300 * MB)
+            // shows 157 mb of it on the youtube homepage and a forced drop gives 157 back. drop
+            // the frames on every conservative release, the poll is 15 s so the sawtooth is capped
+            // at one poll of growth and a repaint decodes back only what is on screen.
+            if (critical == Critical::No) {
+                GarbageCollectionController::singleton().garbageCollectNowIfNotDoneRecently();
                 MemoryCache::singleton().destroyDecodedDataForAllImages();
+            }
 #endif
         });
 #if ENABLE(PERIODIC_MEMORY_MONITOR)

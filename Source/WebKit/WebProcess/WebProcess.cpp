@@ -171,6 +171,7 @@
 #include <wtf/CoroutineUtilities.h>
 #include <wtf/DateMath.h>
 #include <wtf/Language.h>
+#include <wtf/MemoryFootprint.h>
 #include <wtf/ProcessPrivilege.h>
 #include <wtf/RunLoop.h>
 #include <wtf/RuntimeApplicationChecks.h>
@@ -568,6 +569,15 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters,
             WebCore::releaseMemory(critical, synchronous, maintainBackForwardCache, maintainMemoryCache);
             for (auto& page : m_pageMap.values())
                 page->releaseMemory(critical);
+#if PLATFORM(WIN)
+            // windows never reports a decoded size for an image, so the shared cache pruning has
+            // nothing to look at and a visible page keeps every thumbnail it ever decoded, memmap
+            // shows 157 mb of it on the youtube homepage. a settled page is 280 mb without them,
+            // so drop the frames once the footprint is over 300 and a repaint decodes only what
+            // is actually on screen again.
+            if (critical == Critical::No && WTF::memoryFootprint() > 300 * MB)
+                MemoryCache::singleton().destroyDecodedDataForAllImages();
+#endif
         });
 #if ENABLE(PERIODIC_MEMORY_MONITOR)
         if (auto pollInterval = parameters.memoryFootprintPollIntervalForTesting)
@@ -606,7 +616,8 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters,
         // the ceiling is 1 gb for every process summed, so a single web process cannot be allowed
         // to grow until the default 3 gb threshold, which on a box with 32 gb in it never binds at
         // all. conservative only drops caches, strict drops every compiled function, so strict sits
-        // far enough above a healthy page that only a runaway reaches it.
+        // far enough above a healthy page that only a runaway reaches it. the decoded image drop
+        // above is gated on its own 300 mb footprint.
         memoryPressureHandler.setConfiguration(MemoryPressureHandler::Configuration {
             384 * MB, 0.5, 1.5, std::nullopt, 15_s
         });

@@ -602,6 +602,15 @@ void WebProcess::initializeWebProcess(WebProcessCreationParameters&& parameters,
                 scheduleLogMemoryStatistics(LogMemoryStatisticsReason::CriticalMemoryPressureNotification);
             }
         });
+#if PLATFORM(WIN)
+        // the ceiling is 1 gb for every process summed, so a single web process cannot be allowed
+        // to grow until the default 3 gb threshold, which on a box with 32 gb in it never binds at
+        // all. conservative only drops caches, strict drops every compiled function, so strict sits
+        // far enough above a healthy page that only a runaway reaches it.
+        memoryPressureHandler.setConfiguration(MemoryPressureHandler::Configuration {
+            384 * MB, 0.5, 1.5, std::nullopt, 15_s
+        });
+#endif
         memoryPressureHandler.install();
 
         PAL::registerNotifyCallback("com.apple.WebKit.logMemStats"_s, [] {

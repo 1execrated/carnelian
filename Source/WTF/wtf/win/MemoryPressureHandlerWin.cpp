@@ -98,6 +98,14 @@ void MemoryPressureHandler::windowsMeasurementTimerFired()
         releaseMemory(Critical::Yes);
     }
 #endif
+
+#if CPU(ADDRESS64)
+    // x64 has no address space crash guard to fall back on above, and nothing else trimmed this
+    // process either, the low memory notification is system wide and never fires on a box with
+    // 32 gb in it, so a page just grew until the js heap cap caught it. run the same footprint
+    // policy the other ports run, against the budget the web process handed us.
+    measurementTimerFired();
+#endif
 }
 
 void MemoryPressureHandler::platformReleaseMemory(Critical)
@@ -110,7 +118,7 @@ void MemoryPressureHandler::install()
     platformInitialize();
     m_installed = true;
     beginWaitingForLowMemoryNotification();
-    m_windowsMeasurementTimer.startRepeating(60_s);
+    m_windowsMeasurementTimer.startRepeating(m_configuration.pollInterval);
 }
 
 void MemoryPressureHandler::uninstall()
